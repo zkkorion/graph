@@ -1,26 +1,25 @@
 <?
-
+$str = file_get_contents($_FILES['graphData']['tmp_name']);
 $re = '/<tr[^>]*+>\s*+(?#
 )<td[^>]*+>(?<ticket>[^<]*+)<\/td>\s*+(?#
 )<td[^>]*+>(?<opentime>[^<]*+)<\/td>\s*+(?#
 )<td[^>]*+>\s*+(?<type>buy|balance)\s*+<\/td>\s*+(?#
 )(?:<td[^>]*+>(?<profit>[^<]*+)<\/td>\s*+)*+(?#
 )<\/tr>/m';
-$str = file_get_contents('assets/statement1.html');
 preg_match_all($re, $str, $matches, PREG_SET_ORDER, 0);
-
+if(empty($matches))
+	return 'wrong file';
 $newArr = array();
-foreach ($matches as $key => $value)
+$balance = 0;
+foreach ($matches as $i => $value)
 {
-	$tmpArr['ticket'] = $value['ticket'];
-	$tmpArr['type'] = $value['type'];
+	$balance += (float)$value['profit'];
+	$tmpArr['type'] = 'ticket';
+	$tmpArr['ticket\'s number'] = $i;
+	$tmpArr['ticket\'s type'] = ($value['type'] == 'buy') ? 'buy' : 'transfer';
 	$tmpArr['profit'] = $value['profit'];
+	$tmpArr['balance'] = $balance;
 	$newArr[] = $tmpArr;
 }
-$json = json_encode($newArr);
-// Print the entire match result
-print '<style>pre{background-color:#000000;color:#1ace38;font-size:14px;width:100%;max-width:1200px;margin:0 auto;padding:30px;height:900px;overflow:scroll;}</style>';
-print '<pre>';
-print_r($json);
-print '</pre>';
-?>
+header('Content-type: application/json');
+print json_encode($newArr);
